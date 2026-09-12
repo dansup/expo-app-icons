@@ -1,11 +1,43 @@
-# expo-app-icons
+<p align="center">
+  <img src="./icon.png" alt="expo-app-icons" width="180" height="180" />
+</p>
 
-Let users switch between alternate app icons on iOS and Android. Icons are declared once in `app.json`, the config plugin generates all native assets at prebuild time, and a tiny native module flips them at runtime.
+<h1 align="center">expo-app-icons</h1>
 
-- iOS: alternate icons are either single 1024px PNGs in the asset catalog or Icon Composer `.icon` bundles (Liquid Glass). Xcode generates the `CFBundleAlternateIcons` entries itself, no Info.plist surgery.
-- Android: one `activity-alias` per icon. `MainActivity` is never disabled, so deep links and App Links keep working while a custom icon is active.
-- Adaptive icons, round icons and monochrome (themed) icons on Android, using the same options as Expo's own `android.adaptiveIcon`.
-- Works with the New Architecture. Requires a development build (not Expo Go).
+<p align="center">
+  Switch between alternate app icons in Expo apps on iOS and Android.
+</p>
+
+<p align="center">
+  Define your icons once in <code>app.json</code>. Native assets and configuration are generated automatically at prebuild time.
+</p>
+
+---
+
+## Features
+
+- **iOS alternate icons**
+  - Standard 1024×1024 PNG icons
+  - Icon Composer `.icon` bundles with Liquid Glass
+  - No manual `Info.plist` configuration
+
+- **Android alternate icons**
+  - Adaptive icons
+  - Round icons
+  - Monochrome / themed icons
+  - Safe switching using `activity-alias`
+
+- **Deep-link safe**
+  - `MainActivity` is never disabled on Android
+  - Deep Links and App Links continue working while an alternate icon is active
+
+- **Expo native module**
+  - Works with the New Architecture
+  - Icons are generated automatically during prebuild
+  - Small runtime API for reading and changing the active icon
+
+> [!NOTE]
+> `expo-app-icons` requires a development build or production build. It does not work in Expo Go.
 
 ## Install
 
@@ -15,7 +47,9 @@ npx expo install expo-app-icons
 
 ## Configure
 
-The default icon is always whatever `expo.icon` / `expo.android.adaptiveIcon` already is. Only list the alternates.
+Add `expo-app-icons` to your Expo config.
+
+The default icon continues to come from `expo.icon` and/or `expo.android.adaptiveIcon`. You only need to declare alternate icons.
 
 ```json
 {
@@ -49,24 +83,96 @@ The default icon is always whatever `expo.icon` / `expo.android.adaptiveIcon` al
 }
 ```
 
-Each icon is either:
+An icon can be declared as either a simple path:
 
-- a path string: used as a 1024px icon on iOS and as a legacy (non-adaptive) icon on Android, or
-- an object with `ios` (a 1024px PNG or an Icon Composer `.icon` bundle) and/or `android` (path for a legacy icon, or `{ foregroundImage, backgroundColor?, backgroundImage?, monochromeImage? }` for an adaptive icon).
+```json
+{
+  "midnight": "./assets/images/icons/midnight.png"
+}
+```
 
-`.icon` bundles are iOS-only, so they always need the object form with a separate Android image.
+or with platform-specific configuration:
 
-Icon names must match `^[a-z][a-z0-9_]*$`. `default` is reserved.
+```json
+{
+  "pride": {
+    "ios": "./assets/images/icons/pride.png",
+    "android": {
+      "foregroundImage": "./assets/images/icons/pride-fg.png",
+      "backgroundColor": "#1e1b4b",
+      "monochromeImage": "./assets/images/icons/pride-mono.png"
+    }
+  }
+}
+```
 
-Then rebuild:
+### Icon configuration
+
+A path string is used as:
+
+- a 1024×1024 icon on iOS
+- a legacy non-adaptive icon on Android
+
+The object form supports:
+
+- `ios`
+  - 1024×1024 PNG
+  - Icon Composer `.icon` bundle
+
+- `android`
+  - image path for a legacy icon
+  - adaptive icon configuration:
+
+```ts
+{
+  foregroundImage: string;
+  backgroundColor?: string;
+  backgroundImage?: string;
+  monochromeImage?: string;
+}
+```
+
+Icon Composer `.icon` bundles are iOS-only, so they must use the object form if you also want to provide an Android icon:
+
+```json
+{
+  "glass": {
+    "ios": "./assets/images/icons/glass.icon",
+    "android": "./assets/images/icons/glass.png"
+  }
+}
+```
+
+### Icon names
+
+Icon names must match:
+
+```regex
+^[a-z][a-z0-9_]*$
+```
+
+For example:
+
+```text
+midnight
+pride
+retro_2
+dark_blue
+```
+
+`default` is reserved and cannot be used as an alternate icon name.
+
+## Prebuild
+
+After configuring your icons, regenerate the native projects:
 
 ```sh
 npx expo prebuild --clean
 ```
 
-Use `--clean` when you rename or remove icons, otherwise stale mipmaps stay behind in the native project.
+Using `--clean` is especially important when renaming or removing icons. Otherwise, stale Android mipmaps or native configuration may remain in the generated project.
 
-## Use
+## Usage
 
 ```ts
 import {
@@ -75,18 +181,71 @@ import {
   isSupported,
   setAppIcon,
 } from "expo-app-icons";
-
-isSupported(); // false in Expo Go, on web, or if no icons are configured
-getAvailableIcons(); // ['midnight', 'pride', 'retro'] (platform-specific)
-getAppIcon(); // 'pride' or null for the default icon
-
-await setAppIcon("midnight");
-await setAppIcon(null); // back to the default icon
 ```
 
-`setAppIcon` resolves with the icon name and rejects with `ERR_UNKNOWN_ICON`, `ERR_ICONS_NOT_SUPPORTED`, or `ERR_ICON_CHANGE_FAILED`.
+### Check support
 
-A minimal picker:
+```ts
+isSupported();
+```
+
+Returns `false` when:
+
+- running in Expo Go
+- running on web
+- no alternate icons are configured
+- the platform does not support changing app icons
+
+### Get available icons
+
+```ts
+const icons = getAvailableIcons();
+
+console.log(icons);
+// ['midnight', 'pride', 'glass', 'retro']
+```
+
+The returned list is platform-specific. Icons configured only for another platform are omitted.
+
+### Get the current icon
+
+```ts
+const icon = getAppIcon();
+
+console.log(icon);
+// 'pride'
+```
+
+The default app icon is represented by `null`:
+
+```ts
+getAppIcon();
+// null
+```
+
+### Change the icon
+
+```ts
+await setAppIcon("midnight");
+```
+
+Restore the default icon with:
+
+```ts
+await setAppIcon(null);
+```
+
+`setAppIcon()` resolves with the selected icon name, or `null` when restoring the default icon.
+
+It may reject with:
+
+| Error                     | Meaning                                                 |
+| ------------------------- | ------------------------------------------------------- |
+| `ERR_UNKNOWN_ICON`        | The requested icon is not configured                    |
+| `ERR_ICONS_NOT_SUPPORTED` | Alternate icons are unavailable on the current platform |
+| `ERR_ICON_CHANGE_FAILED`  | The native platform failed to change the icon           |
+
+## Example picker
 
 ```tsx
 import { useState } from "react";
@@ -119,24 +278,128 @@ export default function IconPicker() {
 
 ### iOS
 
-- iOS shows a system alert ("You have changed the icon for X") after every change. This package uses the public API only, so the alert stays.
-- PNG icons are stored as `AppIcon-<name>.appiconset` in `Images.xcassets`. Transparency is flattened onto white, as required by App Store review.
-- Icon Composer bundles are copied to `ios/<App>/AppIcon-<name>.icon` and added to the target's resources, the same way Expo handles `expo.ios.icon`. Building them requires Xcode 26 (locally or on EAS); Xcode renders flat fallbacks for devices running older iOS versions. PNG and `.icon` alternates can be mixed freely.
-- Dark and tinted variants for PNG icons (iOS 18) are not supported yet. Icon Composer bundles carry their own appearance variants.
+iOS displays a system alert after each icon change:
+
+> You have changed the icon for X.
+
+`expo-app-icons` uses Apple's public alternate icon API, so this alert cannot be suppressed.
+
+#### PNG icons
+
+PNG alternate icons are stored as:
+
+```text
+AppIcon-<name>.appiconset
+```
+
+inside `Images.xcassets`.
+
+Transparency is flattened onto white to satisfy App Store icon requirements.
+
+#### Icon Composer
+
+Icon Composer `.icon` bundles are copied to:
+
+```text
+ios/<App>/AppIcon-<name>.icon
+```
+
+and added to the application's resource target in the same way Expo handles `expo.ios.icon`.
+
+Building Icon Composer icons requires **Xcode 26** locally or through EAS Build.
+
+Xcode automatically renders flat fallbacks for devices running older versions of iOS.
+
+PNG and `.icon` alternate icons can be mixed freely.
+
+> [!NOTE]
+> Dark and tinted variants for PNG alternate icons introduced with iOS 18 are not currently supported. Icon Composer bundles can carry their own appearance variants.
 
 ### Android
 
-- The plugin removes the `MAIN`/`LAUNCHER` intent filter from `MainActivity` and adds one `activity-alias` per icon, plus a `.MainActivityDefault` alias that uses your regular `ic_launcher`. Only aliases are ever enabled or disabled, so `MainActivity` and all of its deep-link intent filters stay active.
-- Switching enables the new alias immediately and defers disabling the old one until the app goes to the background. Disabling the alias that launched the current task is what makes some launchers (Samsung, Xiaomi) kill the app mid-session; deferring avoids that. Until then the app drawer briefly shows two entries.
-- The selected icon survives app updates. If an update removes the icon a user had selected, the module falls back to the default icon on next launch so the app never disappears from the launcher.
-- One-time migration cost for existing apps: on the first release that ships this package, the launcher component changes from `.MainActivity` to `.MainActivityDefault`. Some launchers drop pinned home screen shortcuts for the old component; the app drawer entry is unaffected.
-- Adaptive icons need the foreground artwork inside the safe zone (center 66% of a 108dp canvas), same as Expo's `android.adaptiveIcon.foregroundImage`.
+Android alternate icons are implemented using `activity-alias`.
+
+The plugin removes the `MAIN` / `LAUNCHER` intent filter from `MainActivity` and creates:
+
+```text
+.MainActivityDefault
+```
+
+for the default launcher icon, plus one alias for each configured alternate icon.
+
+`MainActivity` itself is never enabled or disabled.
+
+This means its Deep Link and App Link intent filters remain active regardless of which launcher icon is selected.
+
+#### Switching icons
+
+When switching icons, the new alias is enabled immediately.
+
+The previous alias is disabled after the app moves to the background.
+
+This avoids an Android launcher issue where disabling the alias that launched the current task can cause some launchers — particularly Samsung and Xiaomi devices — to terminate the app mid-session.
+
+During this short period, the app drawer may temporarily display both icons.
+
+#### App updates
+
+The selected icon survives application updates.
+
+If an update removes an icon that a user previously selected, `expo-app-icons` automatically falls back to the default icon the next time the application launches.
+
+This prevents the application from disappearing from the launcher.
+
+#### Existing applications
+
+There is a one-time migration consideration when adding `expo-app-icons` to an existing Android application.
+
+The launcher component changes from:
+
+```text
+.MainActivity
+```
+
+to:
+
+```text
+.MainActivityDefault
+```
+
+Some Android launchers may remove existing pinned home-screen shortcuts referencing the old launcher component.
+
+The app drawer entry is unaffected.
+
+#### Adaptive icon safe zone
+
+Adaptive icon foreground artwork should remain inside the Android safe zone:
+
+```text
+center 66% of a 108dp canvas
+```
+
+This is the same requirement as Expo's `android.adaptiveIcon.foregroundImage`.
 
 ## Development
 
+Install dependencies:
+
 ```sh
-npm install        # runs `prepare`, which builds build/ and plugin/build/
-npm run build      # rebuild the JS API (watch mode in a TTY)
+npm install
+```
+
+`npm install` runs `prepare`, which builds both the JavaScript API and config plugin.
+
+Build the JavaScript/native module API:
+
+```sh
+npm run build
+```
+
+When running in a TTY, this uses watch mode.
+
+Build the config plugin:
+
+```sh
 npm run build:plugin
 ```
 
