@@ -1,0 +1,50 @@
+{
+  "name": "expo-app-icons",
+  "version": "0.1.0",
+  "description": "Switch between alternate app icons on iOS and Android, configured from app.json",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "node internal/module_scripts/build.js",
+    "build:plugin": "node internal/module_scripts/build.js plugin",
+    "clean": "node internal/module_scripts/clean.js && node internal/module_scripts/clean.js plugin",
+    "prepare": "node internal/module_scripts/prepare.js"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "app-icon",
+    "alternate-icon",
+    "dynamic-icon"
+  ],
+  "repository": "https://github.com/dansup/expo-app-icons",
+  "bugs": {
+    "url": "https://github.com/dansup/expo-app-icons/issues"
+  },
+  "author": "dansup",
+  "license": "MIT",
+  "homepage": "https://github.com/dansup/expo-app-icons#readme",
+  "files": [
+    "build",
+    "plugin/build",
+    "android",
+    "ios",
+    "app.plugin.js",
+    "expo-module.config.json",
+    "README.md",
+    "LICENSE"
+  ],
+  "dependencies": {
+    "@expo/image-utils": "^0.11.5"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "expo": "^57.0.21",
+    "typescript": "^5.9.2"
+  },
+  "peerDependencies": {
+    "expo": "*",
+    "react": "*",
+    "react-native": "*"
+  }
+}
