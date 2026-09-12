@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="./icon.png" alt="expo-app-icons" width="180" height="180" />
+  <img src="./header.png" alt="expo-app-icons" width="3752" height="1628" />
 </p>
 
 <h1 align="center">expo-app-icons</h1>
