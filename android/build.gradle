@@ -1,5 +1,7 @@
-apply plugin: 'com.android.library'
-apply plugin: 'expo-module-gradle-plugin'
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
 
 group = 'expo.modules.appicons'
 version = '0.1.0'

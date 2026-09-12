@@ -1,6 +1,22 @@
 {
-  "extends": "expo-module-scripts/tsconfig.base",
   "compilerOptions": {
+    "lib": ["dom", "DOM.Iterable", "esnext"],
+    "jsx": "react-native",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "module": "esnext",
+    "moduleDetection": "force",
+    "esModuleInterop": true,
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+    "inlineSources": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "rootDir": "./src",
     "outDir": "./build"
   },
   "include": ["./src"],

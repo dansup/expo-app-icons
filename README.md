@@ -120,8 +120,8 @@ export default function IconPicker() {
 ## Development
 
 ```sh
-npm install
-npm run build
+npm install        # runs `prepare`, which builds build/ and plugin/build/
+npm run build      # rebuild the JS API (watch mode in a TTY)
 npm run build:plugin
 ```
 

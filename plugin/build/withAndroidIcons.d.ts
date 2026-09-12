@@ -1,0 +1,11 @@
+import { AndroidConfig, ConfigPlugin } from 'expo/config-plugins';
+import { ResolvedIcon } from './config';
+type AndroidManifest = AndroidConfig.Manifest.AndroidManifest;
+export declare const ICON_META_DATA_NAME = "expo.modules.appicons.icon";
+export declare function getResourceName(name: string, suffix?: string): string;
+export declare function getColorName(name: string): string;
+export declare function getAliasName(name: string): string;
+export declare const withAndroidIcons: ConfigPlugin<ResolvedIcon[]>;
+export declare function setLauncherAliases(manifest: AndroidManifest, icons: ResolvedIcon[]): AndroidManifest;
+export declare function writeIconResourcesAsync(projectRoot: string, icons: ResolvedIcon[]): Promise<void>;
+export {};
