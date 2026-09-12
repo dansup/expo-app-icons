@@ -1,5 +1,5 @@
-import fs from 'fs';
-import path from 'path';
+import fs from "fs";
+import path from "path";
 
 export type AndroidAdaptiveIconSource = {
   foregroundImage: string;
@@ -20,9 +20,9 @@ export type AppIconsPluginProps = {
 };
 
 export type ResolvedAndroidIcon =
-  | { kind: 'legacy'; image: string }
+  | { kind: "legacy"; image: string }
   | {
-      kind: 'adaptive';
+      kind: "adaptive";
       foregroundImage: string;
       backgroundColor: string;
       backgroundImage?: string;
@@ -35,20 +35,23 @@ export type ResolvedIcon = {
   android?: ResolvedAndroidIcon;
 };
 
-export const DEFAULT_ICON_NAME = 'default';
+export const DEFAULT_ICON_NAME = "default";
+export const ICON_COMPOSER_EXTENSION = ".icon";
 
 const NAME_PATTERN = /^[a-z][a-z0-9_]*$/;
-const DEFAULT_BACKGROUND_COLOR = '#FFFFFF';
+const DEFAULT_BACKGROUND_COLOR = "#FFFFFF";
 
 export function fail(message: string): never {
   throw new Error(`[expo-app-icons] ${message}`);
 }
 
-export function resolveIcons(props: AppIconsPluginProps | undefined): ResolvedIcon[] {
+export function resolveIcons(
+  props: AppIconsPluginProps | undefined,
+): ResolvedIcon[] {
   const icons = props?.icons;
-  if (!icons || typeof icons !== 'object' || Array.isArray(icons)) {
+  if (!icons || typeof icons !== "object" || Array.isArray(icons)) {
     fail(
-      'Expected an "icons" object, e.g. ["expo-app-icons", { "icons": { "midnight": "./assets/images/icons/midnight.png" } }]'
+      'Expected an "icons" object, e.g. ["expo-app-icons", { "icons": { "midnight": "./assets/images/icons/midnight.png" } }]',
     );
   }
 
@@ -62,25 +65,34 @@ export function resolveIcons(props: AppIconsPluginProps | undefined): ResolvedIc
 
 function resolveIcon(name: string, source: AppIconSource): ResolvedIcon {
   if (name === DEFAULT_ICON_NAME) {
-    fail(`"${DEFAULT_ICON_NAME}" is reserved for the icon configured in expo.icon. Pick another name.`);
+    fail(
+      `"${DEFAULT_ICON_NAME}" is reserved for the icon configured in expo.icon. Pick another name.`,
+    );
   }
   if (!NAME_PATTERN.test(name)) {
     fail(
-      `Invalid icon name "${name}". Use lowercase letters, digits and underscores, starting with a letter.`
+      `Invalid icon name "${name}". Use lowercase letters, digits and underscores, starting with a letter.`,
     );
   }
 
-  if (typeof source === 'string') {
-    return { name, ios: source, android: { kind: 'legacy', image: source } };
+  if (typeof source === "string") {
+    if (isIconComposerBundle(source)) {
+      fail(
+        `Icon "${name}": Icon Composer bundles (.icon) are iOS-only. Use the object form with a separate Android image, e.g. { "ios": "${source}", "android": "./assets/images/icons/${name}.png" }.`,
+      );
+    }
+    return { name, ios: source, android: { kind: "legacy", image: source } };
   }
-  if (!source || typeof source !== 'object') {
-    fail(`Icon "${name}" must be a path string or an object with "ios" and/or "android".`);
+  if (!source || typeof source !== "object") {
+    fail(
+      `Icon "${name}" must be a path string or an object with "ios" and/or "android".`,
+    );
   }
 
   const resolved: ResolvedIcon = { name };
 
   if (source.ios !== undefined) {
-    if (typeof source.ios !== 'string') {
+    if (typeof source.ios !== "string") {
       fail(`Icon "${name}": "ios" must be a path string.`);
     }
     resolved.ios = source.ios;
@@ -97,15 +109,24 @@ function resolveIcon(name: string, source: AppIconSource): ResolvedIcon {
   return resolved;
 }
 
-function resolveAndroid(name: string, source: string | AndroidAdaptiveIconSource): ResolvedAndroidIcon {
-  if (typeof source === 'string') {
-    return { kind: 'legacy', image: source };
+function resolveAndroid(
+  name: string,
+  source: string | AndroidAdaptiveIconSource,
+): ResolvedAndroidIcon {
+  if (typeof source === "string") {
+    return { kind: "legacy", image: source };
   }
-  if (!source || typeof source !== 'object' || typeof source.foregroundImage !== 'string') {
-    fail(`Icon "${name}": "android" must be a path string or an object with "foregroundImage".`);
+  if (
+    !source ||
+    typeof source !== "object" ||
+    typeof source.foregroundImage !== "string"
+  ) {
+    fail(
+      `Icon "${name}": "android" must be a path string or an object with "foregroundImage".`,
+    );
   }
   return {
-    kind: 'adaptive',
+    kind: "adaptive",
     foregroundImage: source.foregroundImage,
     backgroundColor: source.backgroundColor ?? DEFAULT_BACKGROUND_COLOR,
     backgroundImage: source.backgroundImage,
@@ -113,15 +134,29 @@ function resolveAndroid(name: string, source: string | AndroidAdaptiveIconSource
   };
 }
 
+export function isIconComposerBundle(source: string): boolean {
+  return path.extname(source).toLowerCase() === ICON_COMPOSER_EXTENSION;
+}
+
 export function resolveSourcePath(
   projectRoot: string,
   source: string,
   iconName: string,
-  label: string
+  label: string,
 ): string {
   const absolute = path.resolve(projectRoot, source);
   if (!fs.existsSync(absolute)) {
-    fail(`Icon "${iconName}" (${label}): file not found at "${source}" (resolved to ${absolute})`);
+    fail(
+      `Icon "${iconName}" (${label}): file not found at "${source}" (resolved to ${absolute})`,
+    );
+  }
+  if (
+    isIconComposerBundle(source) &&
+    !fs.existsSync(path.join(absolute, "icon.json"))
+  ) {
+    fail(
+      `Icon "${iconName}" (${label}): "${source}" is not an Icon Composer bundle (expected an icon.json inside it)`,
+    );
   }
   return absolute;
 }

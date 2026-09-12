@@ -2,7 +2,7 @@
 
 Let users switch between alternate app icons on iOS and Android. Icons are declared once in `app.json`, the config plugin generates all native assets at prebuild time, and a tiny native module flips them at runtime.
 
-- iOS: alternate icons live in the asset catalog as single 1024px images. Xcode generates the `CFBundleAlternateIcons` entries itself, no Info.plist surgery.
+- iOS: alternate icons are either single 1024px PNGs in the asset catalog or Icon Composer `.icon` bundles (Liquid Glass). Xcode generates the `CFBundleAlternateIcons` entries itself, no Info.plist surgery.
 - Android: one `activity-alias` per icon. `MainActivity` is never disabled, so deep links and App Links keep working while a custom icon is active.
 - Adaptive icons, round icons and monochrome (themed) icons on Android, using the same options as Expo's own `android.adaptiveIcon`.
 - Works with the New Architecture. Requires a development build (not Expo Go).
@@ -34,6 +34,10 @@ The default icon is always whatever `expo.icon` / `expo.android.adaptiveIcon` al
                 "monochromeImage": "./assets/images/icons/pride-mono.png"
               }
             },
+            "glass": {
+              "ios": "./assets/images/icons/glass.icon",
+              "android": "./assets/images/icons/glass.png"
+            },
             "retro": {
               "ios": "./assets/images/icons/retro.png"
             }
@@ -48,7 +52,9 @@ The default icon is always whatever `expo.icon` / `expo.android.adaptiveIcon` al
 Each icon is either:
 
 - a path string: used as a 1024px icon on iOS and as a legacy (non-adaptive) icon on Android, or
-- an object with `ios` (path) and/or `android` (path for a legacy icon, or `{ foregroundImage, backgroundColor?, backgroundImage?, monochromeImage? }` for an adaptive icon).
+- an object with `ios` (a 1024px PNG or an Icon Composer `.icon` bundle) and/or `android` (path for a legacy icon, or `{ foregroundImage, backgroundColor?, backgroundImage?, monochromeImage? }` for an adaptive icon).
+
+`.icon` bundles are iOS-only, so they always need the object form with a separate Android image.
 
 Icon names must match `^[a-z][a-z0-9_]*$`. `default` is reserved.
 
@@ -63,13 +69,18 @@ Use `--clean` when you rename or remove icons, otherwise stale mipmaps stay behi
 ## Use
 
 ```ts
-import { getAppIcon, getAvailableIcons, isSupported, setAppIcon } from 'expo-app-icons';
+import {
+  getAppIcon,
+  getAvailableIcons,
+  isSupported,
+  setAppIcon,
+} from "expo-app-icons";
 
-isSupported();          // false in Expo Go, on web, or if no icons are configured
-getAvailableIcons();    // ['midnight', 'pride', 'retro'] (platform-specific)
-getAppIcon();           // 'pride' or null for the default icon
+isSupported(); // false in Expo Go, on web, or if no icons are configured
+getAvailableIcons(); // ['midnight', 'pride', 'retro'] (platform-specific)
+getAppIcon(); // 'pride' or null for the default icon
 
-await setAppIcon('midnight');
+await setAppIcon("midnight");
 await setAppIcon(null); // back to the default icon
 ```
 
@@ -78,9 +89,9 @@ await setAppIcon(null); // back to the default icon
 A minimal picker:
 
 ```tsx
-import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
-import { getAppIcon, getAvailableIcons, setAppIcon } from 'expo-app-icons';
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { getAppIcon, getAvailableIcons, setAppIcon } from "expo-app-icons";
 
 export default function IconPicker() {
   const [current, setCurrent] = useState(getAppIcon());
@@ -90,10 +101,13 @@ export default function IconPicker() {
     <View>
       {icons.map((name) => (
         <Pressable
-          key={name ?? 'default'}
+          key={name ?? "default"}
           onPress={() => setAppIcon(name).then(setCurrent)}
         >
-          <Text>{name ?? 'Default'}{current === name ? ' ✓' : ''}</Text>
+          <Text>
+            {name ?? "Default"}
+            {current === name ? " ✓" : ""}
+          </Text>
         </Pressable>
       ))}
     </View>
@@ -106,8 +120,9 @@ export default function IconPicker() {
 ### iOS
 
 - iOS shows a system alert ("You have changed the icon for X") after every change. This package uses the public API only, so the alert stays.
-- Alternate icons are stored as `AppIcon-<name>.appiconset` in `Images.xcassets`. Transparency is flattened onto white, as required by App Store review.
-- Dark and tinted variants (iOS 18) are not supported yet.
+- PNG icons are stored as `AppIcon-<name>.appiconset` in `Images.xcassets`. Transparency is flattened onto white, as required by App Store review.
+- Icon Composer bundles are copied to `ios/<App>/AppIcon-<name>.icon` and added to the target's resources, the same way Expo handles `expo.ios.icon`. Building them requires Xcode 26 (locally or on EAS); Xcode renders flat fallbacks for devices running older iOS versions. PNG and `.icon` alternates can be mixed freely.
+- Dark and tinted variants for PNG icons (iOS 18) are not supported yet. Icon Composer bundles carry their own appearance variants.
 
 ### Android
 
