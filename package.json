@@ -1,6 +1,6 @@
 {
   "name": "expo-app-icons",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Switch between alternate app icons on iOS and Android, configured from app.json",
   "main": "build/index.js",
   "types": "build/index.d.ts",
